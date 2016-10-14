@@ -4,6 +4,8 @@ LDFLAGS := `sdl2-config --libs` -lGL -lGLEW
 voxel: src/main.o
 	$(CXX) $(LDFLAGS) src/main.o $(LOADLIBES) $(LDLIBS) -o voxel
 
+src/main.o: src/main.cpp src/uniform.hpp
+
 clean:
 	rm -f voxel
 	rm -f src/*.o

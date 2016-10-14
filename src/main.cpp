@@ -1,5 +1,7 @@
 #define GLM_FORCE_RADIANS
 
+#include "uniform.hpp"
+
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -20,7 +22,6 @@ void cleanup(SdlState);
 
 GLuint create_compiled_shader(GLenum, std::string);
 GLuint create_linked_program(std::vector<GLenum>);
-GLint query_uniform_location(GLuint, std::string);
 void create_bound_vao();
 void create_bound_vbo();
 std::string read_resource_from_file(std::string);
@@ -62,21 +63,32 @@ int main()
     create_bound_vao();
     create_bound_vbo();
 
+    Uniform<glm::mat4> projection(program_id, "modelToClip");
+
     constexpr float aspect_ratio = screen_width / (float) screen_height;
-    glm::mat4 projection =
-        glm::perspective(glm::radians(60.f), aspect_ratio, 0.1f, 10.f);
-    GLint model_to_clip_location =
-        query_uniform_location(program_id, "modelToClip");
-    glUniformMatrix4fv(
-            model_to_clip_location, 1, GL_FALSE, glm::value_ptr(projection));
+    float fov = 60.f;
+    projection.set(
+            glm::perspective(glm::radians(fov), aspect_ratio, 0.1f, 10.f));
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     bool quit = false;
     while (!quit) {
         SDL_Event sdl_event;
         while (SDL_PollEvent(&sdl_event)) {
-            if (sdl_event.type == SDL_QUIT
-                    || sdl_event.type == SDL_KEYDOWN) {
+            if (sdl_event.type == SDL_QUIT) {
                 quit = true;
+            } else if (sdl_event.type == SDL_KEYDOWN) {
+                if (sdl_event.key.keysym.sym == SDLK_ESCAPE) {
+                    quit = true;
+                } else if (sdl_event.key.keysym.sym == SDLK_KP_PLUS
+                        || sdl_event.key.keysym.sym == SDLK_KP_MINUS) {
+                    float sign = sdl_event.key.keysym.sym == SDLK_KP_PLUS
+                        ? 1.f : -1.f;
+                    fov = glm::clamp(fov + sign * 5.f, 10.f, 180.f);
+                    projection.set(glm::perspective(
+                                glm::radians(fov), aspect_ratio, 0.1f, 10.f));
+                }
             }
         }
 
@@ -162,18 +174,6 @@ GLuint create_linked_program(const std::vector<GLenum> shader_ids)
         return program_id;
     } else {
         throw std::runtime_error(info_log);
-    }
-}
-
-GLint query_uniform_location(
-        const GLuint program_id, const std::string uniform_name)
-{
-    const GLint location =
-        glGetUniformLocation(program_id, uniform_name.c_str());
-    if (location != -1) {
-        return location;
-    } else {
-        throw std::runtime_error("Uniform does not exist: " + uniform_name);
     }
 }
 
