@@ -1,9 +1,13 @@
+#define GLM_FORCE_RADIANS
+
 #include <fstream>
 #include <sstream>
 #include <vector>
 
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 #include <SDL.h>
 
 struct SdlState
@@ -16,21 +20,24 @@ void cleanup(SdlState);
 
 GLuint create_compiled_shader(GLenum, std::string);
 GLuint create_linked_program(std::vector<GLenum>);
+GLint query_uniform_location(GLuint, std::string);
 void create_bound_vao();
 void create_bound_vbo();
 std::string read_resource_from_file(std::string);
 
-static constexpr GLfloat vertex_coords[] = {
-    -1.0f, -1.0f, 0.0f,
-    1.0f, -1.0f, 0.0f,
-    0.0f,  1.0f, 0.0f,
+constexpr int screen_width = 1280;
+constexpr int screen_height = 720;
+constexpr GLfloat vertex_coords[] = {
+    -1.0f, -1.0f, -3.0f,
+    1.0f, -1.0f, -3.0f,
+    0.0f,  1.0f, -3.0f,
 
-    -1.0f, 1.0f, 0.0f,
-    1.0f, 1.0f, 0.0f,
-    0.0f,  -1.0f, 0.0f,
+    1.0f, 1.0f, -6.0f,
+    -1.0f, 1.0f, -6.0f,
+    0.0f,  -1.0f, -6.0f,
 };
-static constexpr GLsizei vertex_count = 6;
-static constexpr GLint vertex_dim = 3;
+constexpr GLsizei vertex_count = 6;
+constexpr GLint vertex_dim = 3;
 
 int main()
 {
@@ -54,6 +61,14 @@ int main()
 
     create_bound_vao();
     create_bound_vbo();
+
+    constexpr float aspect_ratio = screen_width / (float) screen_height;
+    glm::mat4 projection =
+        glm::perspective(glm::radians(60.f), aspect_ratio, 0.1f, 10.f);
+    GLint model_to_clip_location =
+        query_uniform_location(program_id, "modelToClip");
+    glUniformMatrix4fv(
+            model_to_clip_location, 1, GL_FALSE, glm::value_ptr(projection));
 
     bool quit = false;
     while (!quit) {
@@ -91,7 +106,8 @@ SdlState initialize()
     sdl_state.window = SDL_CreateWindow(
             "voxel",
             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+            screen_width, screen_height,
+            SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GL_CreateContext(sdl_state.window);
     glewExperimental = GL_TRUE;
@@ -146,6 +162,18 @@ GLuint create_linked_program(const std::vector<GLenum> shader_ids)
         return program_id;
     } else {
         throw std::runtime_error(info_log);
+    }
+}
+
+GLint query_uniform_location(
+        const GLuint program_id, const std::string uniform_name)
+{
+    const GLint location =
+        glGetUniformLocation(program_id, uniform_name.c_str());
+    if (location != -1) {
+        return location;
+    } else {
+        throw std::runtime_error("Uniform does not exist: " + uniform_name);
     }
 }
 
