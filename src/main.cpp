@@ -1,3 +1,7 @@
+#include <fstream>
+#include <sstream>
+#include <vector>
+
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <SDL.h>
@@ -10,6 +14,24 @@ struct SdlState
 SdlState initialize();
 void cleanup(SdlState);
 
+GLuint create_compiled_shader(GLenum, std::string);
+GLuint create_linked_program(std::vector<GLenum>);
+void create_bound_vao();
+void create_bound_vbo();
+std::string read_resource_from_file(std::string);
+
+static constexpr GLfloat vertex_coords[] = {
+    -1.0f, -1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    0.0f,  1.0f, 0.0f,
+
+    -1.0f, 1.0f, 0.0f,
+    1.0f, 1.0f, 0.0f,
+    0.0f,  -1.0f, 0.0f,
+};
+static constexpr GLsizei vertex_count = 6;
+static constexpr GLint vertex_dim = 3;
+
 int main()
 {
     SdlState sdl_state = initialize();
@@ -19,6 +41,19 @@ int main()
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_major_version);
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &gl_minor_version);
     printf("OpenGL %d.%d\n", gl_major_version, gl_minor_version);
+
+    const GLuint vertex_shader_id = create_compiled_shader(
+            GL_VERTEX_SHADER,
+            read_resource_from_file("shader.vert"));
+    const GLuint fragment_shader_id = create_compiled_shader(
+            GL_FRAGMENT_SHADER,
+            read_resource_from_file("shader.frag"));
+    const GLuint program_id = create_linked_program(
+            {vertex_shader_id, fragment_shader_id});
+    glUseProgram(program_id);
+
+    create_bound_vao();
+    create_bound_vbo();
 
     bool quit = false;
     while (!quit) {
@@ -32,6 +67,8 @@ int main()
 
         glClearColor(0.39f, 0.58f, 0.93f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glDrawArrays(GL_TRIANGLES, 0, vertex_count);
 
         SDL_GL_SwapWindow(sdl_state.window);
     }
@@ -47,7 +84,7 @@ SdlState initialize()
 
     SDL_Init(SDL_INIT_VIDEO);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(
             SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
@@ -57,6 +94,7 @@ SdlState initialize()
             800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
     SDL_GL_CreateContext(sdl_state.window);
+    glewExperimental = GL_TRUE;
     glewInit();
 
     return sdl_state;
@@ -66,4 +104,82 @@ void cleanup(SdlState sdl_state)
 {
     SDL_DestroyWindow(sdl_state.window);
     SDL_Quit();
+}
+
+GLuint create_compiled_shader(
+        const GLenum shader_type, const std::string source)
+{
+    static constexpr GLsizei info_log_max_length = 4096;
+
+    const GLuint shader_id = glCreateShader(shader_type);
+    const GLchar* source_cstr = source.c_str();
+    glShaderSource(shader_id, 1, &source_cstr, nullptr);
+    glCompileShader(shader_id);
+
+    GLchar info_log_cstr[info_log_max_length];
+    glGetShaderInfoLog(shader_id, info_log_max_length, nullptr, info_log_cstr);
+    const std::string info_log = info_log_cstr;
+
+    if (info_log.empty()) {
+        return shader_id;
+    } else {
+        throw std::runtime_error(info_log);
+    }
+}
+
+GLuint create_linked_program(const std::vector<GLenum> shader_ids)
+{
+    static constexpr GLsizei info_log_max_length = 4096;
+
+    const GLuint program_id = glCreateProgram();
+    for (const GLuint shader_id : shader_ids) {
+        glAttachShader(program_id, shader_id);
+    }
+    glLinkProgram(program_id);
+
+    GLchar info_log_cstr[info_log_max_length];
+    glGetProgramInfoLog(
+            program_id, info_log_max_length, nullptr, info_log_cstr);
+    const std::string info_log = info_log_cstr;
+
+    if (info_log.empty()) {
+        return program_id;
+    } else {
+        throw std::runtime_error(info_log);
+    }
+}
+
+void create_bound_vao()
+{
+    GLuint vao_id;
+    glGenVertexArrays(1, &vao_id);
+    glBindVertexArray(vao_id);
+    glEnableVertexAttribArray(0);
+}
+
+void create_bound_vbo()
+{
+    static constexpr GLuint attr_index = 0;
+
+    GLuint vbo_id;
+    glGenBuffers(1, &vbo_id);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+    glBufferData(
+            GL_ARRAY_BUFFER,
+            sizeof(vertex_coords), vertex_coords, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+    glVertexAttribPointer(
+            attr_index, vertex_dim, GL_FLOAT, GL_FALSE, 0, nullptr);
+}
+
+std::string read_resource_from_file(const std::string resource_name)
+{
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    file.open("res/" + resource_name);
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+
+    return buffer.str();
 }
