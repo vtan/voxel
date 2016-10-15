@@ -30,15 +30,15 @@ std::string read_resource_from_file(std::string);
 constexpr int screen_width = 1280;
 constexpr int screen_height = 720;
 constexpr GLfloat vertex_coords[] = {
-    -1.0f, -1.0f, 3.0f,
-    1.0f, -1.0f, 3.0f,
-    0.0f,  1.0f, 3.0f,
+    -1.0f, -1.0f, -3.0f,
+    1.0f, -1.0f, -3.0f,
+    0.0f,  1.0f, -3.0f,
 
-    1.0f, 1.0f, 6.0f,
-    -1.0f, 1.0f, 6.0f,
-    0.0f,  -1.0f, 6.0f,
+    1.0f, 1.0f, -6.0f,
+    -1.0f, 1.0f, -6.0f,
+    0.0f,  -1.0f, -6.0f,
 };
-constexpr GLsizei vertex_count = 6;
+constexpr GLsizei vertex_count = 9;
 constexpr GLint vertex_dim = 3;
 
 int main()
@@ -73,7 +73,8 @@ int main()
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
-    float velocity = 0.f;
+    float velocity_forward = 0.f;
+    float velocity_right = 0.f;
 
     bool quit = false;
     while (!quit) {
@@ -93,15 +94,22 @@ int main()
                     camera.set_fov(camera.get_fov() + sign * M_PI / 36.f);
                     model_to_clip.set(camera.calc_world_to_clip());
                 } else if (sc == SDL_SCANCODE_W || sc == SDL_SCANCODE_UP) {
-                    velocity = 0.1f;
+                    velocity_forward = 0.1f;
                 } else if (sc == SDL_SCANCODE_S || sc == SDL_SCANCODE_DOWN) {
-                    velocity = -0.1f;
+                    velocity_forward = -0.1f;
+                } else if (sc == SDL_SCANCODE_A || sc == SDL_SCANCODE_LEFT) {
+                    velocity_right = -0.1f;
+                } else if (sc == SDL_SCANCODE_D || sc == SDL_SCANCODE_RIGHT) {
+                    velocity_right = 0.1f;
                 }
             } else if (sdl_event.type == SDL_KEYUP) {
                 const auto sc = sdl_event.key.keysym.scancode;
                 if (sc == SDL_SCANCODE_W || sc == SDL_SCANCODE_UP
                         || sc == SDL_SCANCODE_S || sc == SDL_SCANCODE_DOWN) {
-                    velocity = 0.f;
+                    velocity_forward = 0.f;
+                } else if (sc == SDL_SCANCODE_A || sc == SDL_SCANCODE_LEFT
+                        || sc == SDL_SCANCODE_D || sc == SDL_SCANCODE_RIGHT) {
+                    velocity_right = 0.f;
                 }
             } else if (sdl_event.type == SDL_MOUSEMOTION) {
                 const float hor_angle = camera.get_horizontal_angle()
@@ -113,8 +121,9 @@ int main()
             }
         }
 
-        if (velocity != 0.f) {
-            camera.move(velocity);
+        if (velocity_forward != 0.f || velocity_right != 0.f) {
+            camera.move(velocity_forward);
+            camera.move_right(velocity_right);
             model_to_clip.set(camera.calc_world_to_clip());
         }
 

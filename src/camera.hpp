@@ -36,6 +36,7 @@ public:
     glm::vec3 get_position() const { return position; }
     void set_position(glm::vec3 new_position) { position = new_position; }
     void move(float distance);
+    void move_right(float distance);
 private:
     float aspect_ratio;
     float fov = glm::radians(60.f);
@@ -43,7 +44,8 @@ private:
     float vertical_angle = 0.f;
 
     glm::vec3 position = glm::vec3(0.f, 0.f, 0.f);
-    glm::vec3 direction = glm::vec3(0.f, 0.f, 1.f);
+    glm::vec3 direction = glm::vec3(0.f, 0.f, -1.f);
+    glm::vec3 direction_right = glm::vec3(1.f, 0.f, 0.f);
 };
 
 glm::mat4 Camera::calc_world_to_clip() const
@@ -67,15 +69,22 @@ void Camera::look(
 {
     horizontal_angle = camera::clamp_angle(new_horizontal_angle);
     vertical_angle = camera::clamp_angle(new_vertical_angle);
-    direction = glm::vec3(
-            glm::rotate(horizontal_angle, glm::vec3(0.f, 1.f, 0.f))
-            * glm::rotate(vertical_angle, glm::vec3(1.f, 0.f, 0.f))
-            * glm::vec4(0.f, 0.f, 1.f, 1.f));
+
+    const glm::mat4 rotation =
+        glm::rotate(horizontal_angle, glm::vec3(0.f, 1.f, 0.f))
+        * glm::rotate(vertical_angle, glm::vec3(1.f, 0.f, 0.f));
+    direction = glm::vec3(rotation * glm::vec4(0.f, 0.f, -1.f, 1.f));
+    direction_right = glm::vec3(rotation * glm::vec4(1.f, 0.f, 0.f, 1.f));
 }
 
 void Camera::move(const float distance)
 {
     position += distance * direction;
+}
+
+void Camera::move_right(const float distance)
+{
+    position += distance * direction_right;
 }
 
 float camera::clamp_angle(const float angle)
