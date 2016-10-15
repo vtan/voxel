@@ -30,13 +30,13 @@ std::string read_resource_from_file(std::string);
 constexpr int screen_width = 1280;
 constexpr int screen_height = 720;
 constexpr GLfloat vertex_coords[] = {
-    -1.0f, -1.0f, -3.0f,
-    1.0f, -1.0f, -3.0f,
-    0.0f,  1.0f, -3.0f,
+    -1.0f, -1.0f, 3.0f,
+    1.0f, -1.0f, 3.0f,
+    0.0f,  1.0f, 3.0f,
 
-    1.0f, 1.0f, -6.0f,
-    -1.0f, 1.0f, -6.0f,
-    0.0f,  -1.0f, -6.0f,
+    1.0f, 1.0f, 6.0f,
+    -1.0f, 1.0f, 6.0f,
+    0.0f,  -1.0f, 6.0f,
 };
 constexpr GLsizei vertex_count = 6;
 constexpr GLint vertex_dim = 3;
@@ -66,12 +66,14 @@ int main()
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
     Camera camera(aspect_ratio);
-    camera.set_horizontal_angle(M_PI);
 
     Uniform<glm::mat4> model_to_clip(program_id, "modelToClip");
     model_to_clip.set(camera.calc_world_to_clip());
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
+
+    float velocity = 0.f;
 
     bool quit = false;
     while (!quit) {
@@ -80,24 +82,40 @@ int main()
             if (sdl_event.type == SDL_QUIT) {
                 quit = true;
             } else if (sdl_event.type == SDL_KEYDOWN) {
-                if (sdl_event.key.keysym.sym == SDLK_ESCAPE) {
+                if (sdl_event.key.repeat) { continue; }
+
+                const auto sc = sdl_event.key.keysym.scancode;
+                if (sc == SDL_SCANCODE_ESCAPE) {
                     quit = true;
-                } else if (sdl_event.key.keysym.sym == SDLK_KP_PLUS
-                        || sdl_event.key.keysym.sym == SDLK_KP_MINUS) {
-                    float sign = sdl_event.key.keysym.sym == SDLK_KP_PLUS
-                        ? 1.f : -1.f;
+                } else if (sc == SDL_SCANCODE_KP_PLUS
+                        || sc == SDL_SCANCODE_KP_MINUS) {
+                    float sign = sc == SDL_SCANCODE_KP_PLUS ? 1.f : -1.f;
                     camera.set_fov(camera.get_fov() + sign * M_PI / 36.f);
                     model_to_clip.set(camera.calc_world_to_clip());
+                } else if (sc == SDL_SCANCODE_W || sc == SDL_SCANCODE_UP) {
+                    velocity = 0.1f;
+                } else if (sc == SDL_SCANCODE_S || sc == SDL_SCANCODE_DOWN) {
+                    velocity = -0.1f;
+                }
+            } else if (sdl_event.type == SDL_KEYUP) {
+                const auto sc = sdl_event.key.keysym.scancode;
+                if (sc == SDL_SCANCODE_W || sc == SDL_SCANCODE_UP
+                        || sc == SDL_SCANCODE_S || sc == SDL_SCANCODE_DOWN) {
+                    velocity = 0.f;
                 }
             } else if (sdl_event.type == SDL_MOUSEMOTION) {
-                camera.set_horizontal_angle(
-                        camera.get_horizontal_angle()
-                            - sdl_event.motion.xrel * M_PI / 360.f);
-                camera.set_vertical_angle(
-                        camera.get_vertical_angle()
-                            - sdl_event.motion.yrel * M_PI / 360.f);
+                const float hor_angle = camera.get_horizontal_angle()
+                    - sdl_event.motion.xrel * M_PI / 360.f;
+                const float ver_angle = camera.get_vertical_angle()
+                    - sdl_event.motion.yrel * M_PI / 360.f;
+                camera.look(hor_angle, ver_angle);
                 model_to_clip.set(camera.calc_world_to_clip());
             }
+        }
+
+        if (velocity != 0.f) {
+            camera.move(velocity);
+            model_to_clip.set(camera.calc_world_to_clip());
         }
 
         glClearColor(0.39f, 0.58f, 0.93f, 1.f);
