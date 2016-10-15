@@ -29,14 +29,14 @@ std::string read_resource_from_file(std::string);
 
 constexpr int screen_width = 1280;
 constexpr int screen_height = 720;
-constexpr GLfloat vertex_coords[] = {
-    -1.0f, -1.0f, -3.0f,
-    1.0f, -1.0f, -3.0f,
-    0.0f,  1.0f, -3.0f,
+const std::vector<glm::vec3> vertex_positions = {
+    glm::vec3(-1.0f, -1.0f, -3.0f),
+    glm::vec3(1.0f, -1.0f, -3.0f),
+    glm::vec3(0.0f,  1.0f, -3.0f),
 
-    1.0f, 1.0f, -6.0f,
-    -1.0f, 1.0f, -6.0f,
-    0.0f,  -1.0f, -6.0f,
+    glm::vec3(1.0f, 1.0f, -6.0f),
+    glm::vec3(-1.0f, 1.0f, -6.0f),
+    glm::vec3(0.0f,  -1.0f, -6.0f),
 };
 constexpr GLsizei vertex_count = 9;
 constexpr GLint vertex_dim = 3;
@@ -130,7 +130,7 @@ int main()
         glClearColor(0.39f, 0.58f, 0.93f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, vertex_count);
+        glDrawArrays(GL_TRIANGLES, 0, vertex_positions.size());
 
         SDL_GL_SwapWindow(sdl_state.window);
     }
@@ -229,7 +229,9 @@ void create_bound_vbo()
     glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
     glBufferData(
             GL_ARRAY_BUFFER,
-            sizeof(vertex_coords), vertex_coords, GL_STATIC_DRAW);
+            vertex_positions.size() * sizeof(glm::vec3),
+            vertex_positions.data(),
+            GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
     glVertexAttribPointer(
             attr_index, vertex_dim, GL_FLOAT, GL_FALSE, 0, nullptr);
