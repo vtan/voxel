@@ -1,5 +1,6 @@
 #define GLM_FORCE_RADIANS
 
+#include "camera.hpp"
 #include "uniform.hpp"
 
 #include <fstream>
@@ -63,12 +64,12 @@ int main()
     create_bound_vao();
     create_bound_vbo();
 
-    Uniform<glm::mat4> projection(program_id, "modelToClip");
-
     constexpr float aspect_ratio = screen_width / (float) screen_height;
-    float fov = 60.f;
-    projection.set(
-            glm::perspective(glm::radians(fov), aspect_ratio, 0.1f, 10.f));
+    Camera camera(aspect_ratio);
+    camera.set_horizontal_angle(M_PI);
+
+    Uniform<glm::mat4> model_to_clip(program_id, "modelToClip");
+    model_to_clip.set(camera.calc_world_to_clip());
 
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -85,10 +86,17 @@ int main()
                         || sdl_event.key.keysym.sym == SDLK_KP_MINUS) {
                     float sign = sdl_event.key.keysym.sym == SDLK_KP_PLUS
                         ? 1.f : -1.f;
-                    fov = glm::clamp(fov + sign * 5.f, 10.f, 180.f);
-                    projection.set(glm::perspective(
-                                glm::radians(fov), aspect_ratio, 0.1f, 10.f));
+                    camera.set_fov(camera.get_fov() + sign * M_PI / 36.f);
+                    model_to_clip.set(camera.calc_world_to_clip());
                 }
+            } else if (sdl_event.type == SDL_MOUSEMOTION) {
+                camera.set_horizontal_angle(
+                        camera.get_horizontal_angle()
+                            - sdl_event.motion.xrel * M_PI / 360.f);
+                camera.set_vertical_angle(
+                        camera.get_vertical_angle()
+                            - sdl_event.motion.yrel * M_PI / 360.f);
+                model_to_clip.set(camera.calc_world_to_clip());
             }
         }
 
