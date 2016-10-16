@@ -169,8 +169,6 @@ std::vector<Voxel> create_volume(
 
 // The border voxels are considered neighbors and are not included in the mesh.
 // TODO place at 0,0,0 not 1,1,1
-// TODO place towards -z?
-// TODO check winding order
 std::vector<glm::vec3> create_mesh_from_volume(
         const std::vector<Voxel> voxels,
         const size_t z_size,
@@ -203,8 +201,8 @@ std::vector<glm::vec3> create_mesh_from_volume(
                     if (right == Voxel::empty) {
                         vertex_positions.insert(vertex_positions.end(), {
                                 glm::vec3(x + 1, y, z),
-                                glm::vec3(x + 1, y, z + 1),
                                 glm::vec3(x + 1, y + 1, z),
+                                glm::vec3(x + 1, y, z + 1),
                                 glm::vec3(x + 1, y, z + 1),
                                 glm::vec3(x + 1, y + 1, z),
                                 glm::vec3(x + 1, y + 1, z + 1),
@@ -237,9 +235,9 @@ std::vector<glm::vec3> create_mesh_from_volume(
                         });
                     }
 
-                    const Voxel front =
+                    const Voxel back =
                         voxels[(z - 1) * xy_size + y * x_size + x];
-                    if (front == Voxel::empty) {
+                    if (back == Voxel::empty) {
                         vertex_positions.insert(vertex_positions.end(), {
                                 glm::vec3(x, y, z),
                                 glm::vec3(x, y + 1, z),
@@ -250,9 +248,9 @@ std::vector<glm::vec3> create_mesh_from_volume(
                         });
                     }
 
-                    const Voxel back =
+                    const Voxel front =
                         voxels[(z + 1) * xy_size + y * x_size + x];
-                    if (back == Voxel::empty) {
+                    if (front == Voxel::empty) {
                         vertex_positions.insert(vertex_positions.end(), {
                                 glm::vec3(x, y, z + 1),
                                 glm::vec3(x + 1, y, z + 1),
