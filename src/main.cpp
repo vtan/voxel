@@ -1,6 +1,7 @@
 #define GLM_FORCE_RADIANS
 
 #include "camera.hpp"
+#include "mesh.hpp"
 #include "uniform.hpp"
 #include "volume.hpp"
 
@@ -33,8 +34,6 @@ std::vector<glm::vec3> create_mesh_from_volume(Volume<Voxel>);
 
 GLuint create_compiled_shader(GLenum, std::string);
 GLuint create_linked_program(std::vector<GLenum>);
-void create_bound_vao();
-void create_bound_vbo(std::vector<glm::vec3> vertex_positions);
 std::string read_resource_from_file(std::string);
 
 constexpr int screen_width = 1280;
@@ -62,10 +61,9 @@ int main()
     glUseProgram(program_id);
 
     const auto volume = create_volume(10, 10, 10);
-    const auto mesh = create_mesh_from_volume(volume);
-
-    create_bound_vao();
-    create_bound_vbo(mesh);
+    Mesh mesh;
+    mesh.get_positions() = create_mesh_from_volume(volume);
+    mesh.build_vao();
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
     Camera camera(aspect_ratio);
@@ -133,7 +131,7 @@ int main()
         glClearColor(0.39f, 0.58f, 0.93f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, mesh.size());
+        mesh.draw();
 
         SDL_GL_SwapWindow(sdl_state.window);
     }
@@ -319,31 +317,6 @@ GLuint create_linked_program(const std::vector<GLenum> shader_ids)
     } else {
         throw std::runtime_error(info_log);
     }
-}
-
-void create_bound_vao()
-{
-    GLuint vao_id;
-    glGenVertexArrays(1, &vao_id);
-    glBindVertexArray(vao_id);
-    glEnableVertexAttribArray(0);
-}
-
-void create_bound_vbo(const std::vector<glm::vec3> vertex_positions)
-{
-    static constexpr GLuint attr_index = 0;
-
-    GLuint vbo_id;
-    glGenBuffers(1, &vbo_id);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-    glBufferData(
-            GL_ARRAY_BUFFER,
-            vertex_positions.size() * sizeof(glm::vec3),
-            vertex_positions.data(),
-            GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-    glVertexAttribPointer(
-            attr_index, vertex_dim, GL_FLOAT, GL_FALSE, 0, nullptr);
 }
 
 std::string read_resource_from_file(const std::string resource_name)
