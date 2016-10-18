@@ -2,8 +2,10 @@
 
 #include "camera.hpp"
 #include "mesh.hpp"
+#include "mesh_builder.hpp"
 #include "uniform.hpp"
 #include "volume.hpp"
+#include "voxel.hpp"
 
 #include <fstream>
 #include <sstream>
@@ -20,17 +22,10 @@ struct SdlState
     SDL_Window *window;
 };
 
-enum class Voxel : uint8_t
-{
-    empty,
-    solid,
-};
-
 SdlState initialize();
 void cleanup(SdlState);
 
 Volume<Voxel> create_volume(size_t z, size_t y, size_t x);
-std::vector<glm::vec3> create_mesh_from_volume(Volume<Voxel>);
 
 GLuint create_compiled_shader(GLenum, std::string);
 GLuint create_linked_program(std::vector<GLenum>);
@@ -38,7 +33,6 @@ std::string read_resource_from_file(std::string);
 
 constexpr int screen_width = 1280;
 constexpr int screen_height = 720;
-constexpr GLint vertex_dim = 3;
 
 int main()
 {
@@ -60,9 +54,10 @@ int main()
             {vertex_shader_id, fragment_shader_id});
     glUseProgram(program_id);
 
-    const auto volume = create_volume(10, 10, 10);
+    const Volume<Voxel> volume = create_volume(10, 10, 10);
     Mesh mesh;
-    mesh.get_positions() = create_mesh_from_volume(volume);
+    MeshBuilder mesh_builder(mesh);
+    mesh_builder.build(volume);
     mesh.build_vao();
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
@@ -158,93 +153,6 @@ Volume<Voxel> create_volume(
     });
 
     return volume;
-}
-
-// The border voxels are considered neighbors and are not included in the mesh.
-// TODO place at 0,0,0 not 1,1,1
-std::vector<glm::vec3> create_mesh_from_volume(const Volume<Voxel> volume)
-{
-    std::vector<glm::vec3> vertex_positions;
-
-    volume.for_each_in_border(1, 1, 1, [&](auto x, auto y, auto z) {
-        const Voxel current = volume.at(x, y, z);
-
-        if (current != Voxel::empty) {
-            const Voxel left = volume.at(x - 1, y, z);
-            if (left == Voxel::empty) {
-                vertex_positions.insert(vertex_positions.end(), {
-                        glm::vec3(x, y, z),
-                        glm::vec3(x, y, z + 1),
-                        glm::vec3(x, y + 1, z),
-                        glm::vec3(x, y, z + 1),
-                        glm::vec3(x, y + 1, z + 1),
-                        glm::vec3(x, y + 1, z),
-                });
-            }
-
-            const Voxel right = volume.at(x + 1, y, z);
-            if (right == Voxel::empty) {
-                vertex_positions.insert(vertex_positions.end(), {
-                        glm::vec3(x + 1, y, z),
-                        glm::vec3(x + 1, y + 1, z),
-                        glm::vec3(x + 1, y, z + 1),
-                        glm::vec3(x + 1, y, z + 1),
-                        glm::vec3(x + 1, y + 1, z),
-                        glm::vec3(x + 1, y + 1, z + 1),
-                });
-            }
-
-            const Voxel below = volume.at(x, y - 1, z);
-            if (below == Voxel::empty) {
-                vertex_positions.insert(vertex_positions.end(), {
-                        glm::vec3(x, y, z),
-                        glm::vec3(x + 1, y, z),
-                        glm::vec3(x, y, z + 1),
-                        glm::vec3(x + 1, y, z),
-                        glm::vec3(x + 1, y, z + 1),
-                        glm::vec3(x, y, z + 1),
-                });
-            }
-
-            const Voxel above = volume.at(x, y + 1, z);
-            if (above == Voxel::empty) {
-                vertex_positions.insert(vertex_positions.end(), {
-                        glm::vec3(x, y + 1, z),
-                        glm::vec3(x, y + 1, z + 1),
-                        glm::vec3(x + 1, y + 1, z),
-                        glm::vec3(x + 1, y + 1, z),
-                        glm::vec3(x, y + 1, z + 1),
-                        glm::vec3(x + 1, y + 1, z + 1),
-                });
-            }
-
-            const Voxel back = volume.at(x, y, z - 1);
-            if (back == Voxel::empty) {
-                vertex_positions.insert(vertex_positions.end(), {
-                        glm::vec3(x, y, z),
-                        glm::vec3(x, y + 1, z),
-                        glm::vec3(x + 1, y, z),
-                        glm::vec3(x, y + 1, z),
-                        glm::vec3(x + 1, y + 1, z),
-                        glm::vec3(x + 1, y, z),
-                });
-            }
-
-            const Voxel front = volume.at(x, y, z + 1);
-            if (front == Voxel::empty) {
-                vertex_positions.insert(vertex_positions.end(), {
-                        glm::vec3(x, y, z + 1),
-                        glm::vec3(x + 1, y, z + 1),
-                        glm::vec3(x, y + 1, z + 1),
-                        glm::vec3(x, y + 1, z + 1),
-                        glm::vec3(x + 1, y, z + 1),
-                        glm::vec3(x + 1, y + 1, z + 1),
-                });
-            }
-        }
-    });
-
-    return vertex_positions;
 }
 
 SdlState initialize()
