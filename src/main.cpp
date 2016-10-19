@@ -145,7 +145,7 @@ Volume<Voxel> create_volume(
             x_size / 2 - 0.5f, y_size / 2 - 0.5f, z_size / 2 - 0.5f);
     const float radius = x_size / 2 - 1;
 
-    volume.for_each_in_border(1, 1, 1, [&](auto x, auto y, auto z) {
+    volume.for_each_voxel_in_border(1, 1, 1, [&](auto x, auto y, auto z) {
         const glm::vec3 pos(x, y, z);
         if (glm::distance(pos, center) <= radius) {
             volume.at(x, y, z) = Voxel::solid;

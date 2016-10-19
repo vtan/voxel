@@ -28,7 +28,11 @@ public:
     const T& at(glm::ivec3 v) const { return at(v.x, v.y, v.z); }
 
     template <typename F>
-    void for_each_in_border(size_t x, size_t y, size_t z, F functor) const;
+    void for_each_voxel_in_border(
+            size_t x, size_t y, size_t z, F functor) const;
+    template <typename F>
+    void for_each_vertex_in_border(
+            size_t x, size_t y, size_t z, F functor) const;
 private:
     std::vector<T> data;
     size_t s_x;
@@ -65,7 +69,7 @@ const T& Volume<T>::at(const size_t x, const size_t y, const size_t z) const
 
 template <typename T>
 template <typename F>
-void Volume<T>::for_each_in_border(
+void Volume<T>::for_each_voxel_in_border(
         const size_t border_x,
         const size_t border_y,
         const size_t border_z,
@@ -75,6 +79,24 @@ void Volume<T>::for_each_in_border(
     for (size_t z = border_z; z < s_z - border_z; ++z) {
         for (size_t y = border_y; y < s_y - border_y; ++y) {
             for (size_t x = border_x; x < s_x - border_x; ++x) {
+                f(x, y, z);
+            }
+        }
+    }
+}
+
+template <typename T>
+template <typename F>
+void Volume<T>::for_each_vertex_in_border(
+        const size_t border_x,
+        const size_t border_y,
+        const size_t border_z,
+        F f)
+    const
+{
+    for (size_t z = border_z; z < s_z - border_z + 1; ++z) {
+        for (size_t y = border_y; y < s_y - border_y + 1; ++y) {
+            for (size_t x = border_x; x < s_x - border_x + 1; ++x) {
                 f(x, y, z);
             }
         }
