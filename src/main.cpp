@@ -56,9 +56,8 @@ int main()
 
     const Volume<Voxel> volume = create_volume(10, 10, 10);
     Mesh mesh;
-    MeshBuilder mesh_builder(mesh);
-    mesh_builder.build(volume);
-    mesh.build_vao();
+    MeshBuilder mesh_builder;
+    mesh.build_vao(mesh_builder.build(volume));
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
     Camera camera(aspect_ratio);
