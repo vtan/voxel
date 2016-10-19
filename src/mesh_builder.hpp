@@ -43,6 +43,13 @@ MeshData MeshBuilder::build(const Volume<Voxel> volume)
         }
     });
 
+    auto brightness_inserter = std::back_inserter(data.brightnesses);
+    std::transform(
+            data.positions.begin(),
+            data.positions.end(),
+            brightness_inserter,
+            [](auto v) { return (GLubyte) (v.y / 8.f * 255); });
+
     return data;
 }
 

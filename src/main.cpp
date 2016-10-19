@@ -65,7 +65,8 @@ int main()
     Uniform<glm::mat4> model_to_clip(program_id, "modelToClip");
     model_to_clip.set(camera.calc_world_to_clip());
 
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
     SDL_SetRelativeMouseMode(SDL_TRUE);
 
     float velocity_forward = 0.f;

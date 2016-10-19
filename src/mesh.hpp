@@ -11,6 +11,7 @@
 struct MeshData
 {
     std::vector<glm::vec3> positions;
+    std::vector<GLubyte> brightnesses;
 };
 
 class Mesh
@@ -22,23 +23,31 @@ public:
     void draw() const;
 private:
     static constexpr GLuint position_attr_index = 0;
+    static constexpr GLuint brightness_attr_index = 1;
 
     MeshData data;
 
     GLuint vao_id;
     GLuint position_vbo_id;
+    GLuint brightness_vbo_id;
 };
 
 Mesh::Mesh()
 {
     glGenVertexArrays(1, &vao_id);
     glBindVertexArray(vao_id);
-    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(position_attr_index);
+    glEnableVertexAttribArray(brightness_attr_index);
 
     glGenBuffers(1, &position_vbo_id);
     glBindBuffer(GL_ARRAY_BUFFER, position_vbo_id);
     glVertexAttribPointer(
             position_attr_index, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+    glGenBuffers(1, &brightness_vbo_id);
+    glBindBuffer(GL_ARRAY_BUFFER, brightness_vbo_id);
+    glVertexAttribPointer(
+            brightness_attr_index, 1, GL_UNSIGNED_BYTE, GL_TRUE, 0, nullptr);
 }
 
 void Mesh::build_vao(MeshData&& new_data)
@@ -46,11 +55,19 @@ void Mesh::build_vao(MeshData&& new_data)
     data = std::move(new_data);
 
     glBindVertexArray(vao_id);
+
     glBindBuffer(GL_ARRAY_BUFFER, position_vbo_id);
     glBufferData(
             GL_ARRAY_BUFFER,
             data.positions.size() * sizeof(glm::vec3),
             data.positions.data(),
+            GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, brightness_vbo_id);
+    glBufferData(
+            GL_ARRAY_BUFFER,
+            data.brightnesses.size() * sizeof(GLubyte),
+            data.brightnesses.data(),
             GL_STATIC_DRAW);
 }
 
