@@ -78,13 +78,18 @@ void MeshBuilder::non_empty_voxel(
 {
     for (auto neighbor : neighbor_dirs_with_face_vertex_positions) {
         const auto neighbor_idx = current_idx + neighbor.first;
+
         if (volume.at(neighbor_idx) == Voxel::empty) {
             auto &rel_positions = neighbor.second;
+            const glm::vec3 normal(
+                    neighbor.first.x, neighbor.first.y, neighbor.first.z);
+
             std::transform(
                     rel_positions.begin(),
                     rel_positions.end(),
                     std::back_inserter(mesh_data.positions),
                     [=](auto rel_pos) { return current_pos + rel_pos; });
+            mesh_data.normals.insert(mesh_data.normals.end(), 6, normal);
         }
     }
 }

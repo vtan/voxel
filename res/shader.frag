@@ -1,10 +1,14 @@
-#version 330
+#version 330 core
 
 out vec4 fragColor;
 
-varying float vertBrightness;
+varying float vertDiffuseLight;
+varying float vertAmbientLight;
 
 void main()
 {
-    fragColor = vec4(vertBrightness * vec3(1.0), 1.0);
+    float brightness =
+        0.5 * vertAmbientLight
+        + 0.5 * vertDiffuseLight;
+    fragColor = vec4(brightness * vec3(1.0), 1.0);
 }
