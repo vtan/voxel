@@ -1,9 +1,9 @@
 #version 330 core
 
-out vec4 fragColor;
+in float vertDiffuseLight;
+in float vertAmbientLight;
 
-varying float vertDiffuseLight;
-varying float vertAmbientLight;
+out vec4 fragColor;
 
 void main()
 {

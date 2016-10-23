@@ -4,8 +4,8 @@ layout(location = 0) in vec3 position;
 layout(location = 1) in vec3 normal;
 layout(location = 2) in float brightness;
 
-varying float vertDiffuseLight;
-varying float vertAmbientLight;
+out float vertDiffuseLight;
+out float vertAmbientLight;
 
 uniform mat4 modelToClip;
 
