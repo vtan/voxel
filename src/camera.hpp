@@ -15,8 +15,6 @@ namespace camera
     static constexpr float far_clipping_plane_dist = 1000.f;
 
     static const glm::vec3 up(0.f, 1.f, 0.f);
-
-    float clamp_angle(float);
 }
 
 class Camera
@@ -67,8 +65,9 @@ void Camera::set_fov(const float new_fov)
 void Camera::look(
         const float new_horizontal_angle, const float new_vertical_angle)
 {
-    horizontal_angle = camera::clamp_angle(new_horizontal_angle);
-    vertical_angle = camera::clamp_angle(new_vertical_angle);
+    horizontal_angle = glm::mod(new_horizontal_angle, glm::radians(360.f));
+    vertical_angle = glm::clamp(
+            new_vertical_angle, glm::radians(-90.f), glm::radians(90.f));
 
     const glm::mat4 rotation =
         glm::rotate(horizontal_angle, glm::vec3(0.f, 1.f, 0.f))
@@ -85,9 +84,4 @@ void Camera::move(const float distance)
 void Camera::move_right(const float distance)
 {
     position += distance * direction_right;
-}
-
-float camera::clamp_angle(const float angle)
-{
-    return glm::mod(angle, 2.f * (float) M_PI);
 }
