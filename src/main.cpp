@@ -1,8 +1,10 @@
 #define GLM_FORCE_RADIANS
 
 #include "camera.hpp"
+#include "chunk.hpp"
+#include "chunk_mesh_repository.hpp"
+#include "chunk_volume_repository.hpp"
 #include "mesh.hpp"
-#include "mesh_builder.hpp"
 #include "uniform.hpp"
 #include "volume.hpp"
 #include "voxel.hpp"
@@ -15,6 +17,7 @@
 #include <GL/gl.h>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
+#include <glm/gtx/transform.hpp>
 #include <SDL.h>
 
 struct SdlState
@@ -54,13 +57,12 @@ int main()
             {vertex_shader_id, fragment_shader_id});
     glUseProgram(program_id);
 
-    const Volume<Voxel> volume = create_volume(10, 10, 10);
-    Mesh mesh;
-    MeshBuilder mesh_builder;
-    mesh.build_vao(mesh_builder.build(volume));
+    ChunkVolumeRepository chunk_volume_repository;
+    ChunkMeshRepository chunk_mesh_repository(chunk_volume_repository);
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
     Camera camera(aspect_ratio);
+    camera.set_position({0.f, 30.f, 0.f});
 
     Uniform<glm::mat4> model_to_clip(program_id, "modelToClip");
     model_to_clip.set(camera.calc_world_to_clip());
@@ -126,7 +128,20 @@ int main()
         glClearColor(0.39f, 0.58f, 0.93f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        mesh.draw();
+        for (int z = -2; z <= 2; ++z) {
+            for (int x = -2; x <= 2; ++x) {
+                ChunkId chunk_id = {x, z};
+
+                const glm::mat4 model_to_world =
+                    Chunks::calc_translation(chunk_id);
+                const glm::mat4 world_to_clip = camera.calc_world_to_clip();
+                model_to_clip.set(world_to_clip * model_to_world);
+
+                chunk_mesh_repository.with(chunk_id, [](const Mesh& mesh) {
+                    mesh.draw();
+                });
+            }
+        }
 
         SDL_GL_SwapWindow(sdl_state.window);
     }
@@ -134,25 +149,6 @@ int main()
     cleanup(sdl_state);
 
     return 0;
-}
-
-Volume<Voxel> create_volume(
-        const size_t z_size, const size_t y_size, const size_t x_size)
-{
-    Volume<Voxel> volume(x_size, y_size, z_size, Voxel::empty);
-
-    const glm::vec3 center(
-            x_size / 2 - 0.5f, y_size / 2 - 0.5f, z_size / 2 - 0.5f);
-    const float radius = x_size / 2 - 1;
-
-    volume.for_each_voxel_in_border(1, 1, 1, [&](auto x, auto y, auto z) {
-        const glm::vec3 pos(x, y, z);
-        if (glm::distance(pos, center) <= radius) {
-            volume.at(x, y, z) = Voxel::solid;
-        }
-    });
-
-    return volume;
 }
 
 SdlState initialize()

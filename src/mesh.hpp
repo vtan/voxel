@@ -20,12 +20,15 @@ class Mesh
 public:
     Mesh();
 
+    void clear();
     void build_vao(MeshData&&);
     void draw() const;
 private:
     static constexpr GLuint position_attr_index = 0;
     static constexpr GLuint normal_attr_index = 1;
     static constexpr GLuint brightness_attr_index = 2;
+
+    bool empty = true;
 
     MeshData data;
 
@@ -59,6 +62,11 @@ Mesh::Mesh()
             brightness_attr_index, 1, GL_UNSIGNED_BYTE, GL_TRUE, 0, nullptr);
 }
 
+void Mesh::clear()
+{
+    empty = true;
+}
+
 void Mesh::build_vao(MeshData&& new_data)
 {
     data = std::move(new_data);
@@ -85,10 +93,14 @@ void Mesh::build_vao(MeshData&& new_data)
             data.brightnesses.size() * sizeof(GLubyte),
             data.brightnesses.data(),
             GL_STATIC_DRAW);
+
+    empty = false;
 }
 
 void Mesh::draw() const
 {
-    glBindVertexArray(vao_id);
-    glDrawArrays(GL_TRIANGLES, 0, data.positions.size());
+    if (!empty) {
+        glBindVertexArray(vao_id);
+        glDrawArrays(GL_TRIANGLES, 0, data.positions.size());
+    }
 }
