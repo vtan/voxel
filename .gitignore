@@ -1,3 +1,4 @@
 voxel
 src/*.o
 *.swp
+src/*.d
