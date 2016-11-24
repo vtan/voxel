@@ -62,7 +62,7 @@ int main()
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
     Camera camera(aspect_ratio);
-    camera.set_position({0.f, 30.f, 0.f});
+    camera.set_position({0.f, 50.f, 0.f});
 
     Uniform<glm::mat4> model_to_clip(program_id, "modelToClip");
     model_to_clip.set(camera.calc_world_to_clip());

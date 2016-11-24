@@ -13,14 +13,14 @@ public:
     Volume<Voxel> sample_volume(
             glm::ivec3 min_coord,
             glm::ivec3 max_coord,
-            size_t border_size)
+            int border_size)
         const;
 };
 
 Volume<Voxel> VolumeSampler::sample_volume(
         const glm::ivec3 begin_coord,
         const glm::ivec3 end_coord,
-        const size_t border_size)
+        const int border_size)
     const
 {
     assert(begin_coord.x <= end_coord.x);
@@ -39,15 +39,13 @@ Volume<Voxel> VolumeSampler::sample_volume(
 
     volume.for_each_voxel_in_border(0, 0, 0,
             [&](size_t vx, size_t vy, size_t vz) {
-        const int x = begin_coord.x + vx - border_size;
-        const int y = begin_coord.y + vy - border_size;
-        const int z = begin_coord.z + vz - border_size;
+        const double x = (begin_coord.x + (int)vx - border_size) / (double) x_size;
+        const double y = (begin_coord.y + (int)vy - border_size) / (double) y_size;
+        const double z = (begin_coord.z + (int)vz - border_size) / (double) z_size;
 
-        const bool floor = (y == 0 || y == end_coord.y - 1);
-        const bool marker = (y == 1 || y == end_coord.y - 2)
-                && x % x_size == 0
-                && z % z_size == 0;
-        if (floor || marker) {
+        const double w = 0.5 * (sin(x) * cos(z) + 1);
+
+        if (y <= w) {
             volume.at(vx, vy, vz) = Voxel::solid;
         }
     });
