@@ -57,7 +57,7 @@ int main()
             {vertex_shader_id, fragment_shader_id});
     glUseProgram(program_id);
 
-    ChunkVolumeRepository chunk_volume_repository;
+    ChunkVolumeRepository chunk_volume_repository(1);
     ChunkMeshRepository chunk_mesh_repository(chunk_volume_repository);
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
