@@ -3,6 +3,7 @@
 #define GLM_FORCE_RADIANS
 
 #include <functional>
+#include <ostream>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -16,6 +17,12 @@ struct ChunkId
 bool operator==(const ChunkId lhs, const ChunkId rhs)
 {
     return lhs.x == rhs.x && lhs.z == rhs.z;
+}
+
+std::ostream& operator<<(std::ostream& os, const ChunkId chunk_id)
+{
+    os << '{' << chunk_id.x << ',' << chunk_id.z << '}';
+    return os;
 }
 
 namespace std

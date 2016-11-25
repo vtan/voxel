@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chunk.hpp"
+#include "log.hpp"
 #include "volume.hpp"
 #include "volume_sampler.hpp"
 #include "voxel.hpp"
@@ -35,6 +36,7 @@ Volume<Voxel>& ChunkVolumeRepository::get_or_sample(const ChunkId chunk_id)
     if (found != volumes.end()) {
         return found->second;
     } else {
+        Log::debug("Sampling volume at " << chunk_id);
         const Volume<Voxel> volume = volume_sampler.sample_volume(
                 Chunks::begin_coord(chunk_id),
                 Chunks::end_coord(chunk_id),

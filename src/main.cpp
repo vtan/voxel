@@ -4,6 +4,7 @@
 #include "chunk.hpp"
 #include "chunk_mesh_repository.hpp"
 #include "chunk_volume_repository.hpp"
+#include "log.hpp"
 #include "mesh.hpp"
 #include "uniform.hpp"
 #include "volume.hpp"
@@ -45,7 +46,7 @@ int main()
     int gl_minor_version;
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_major_version);
     SDL_GL_GetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, &gl_minor_version);
-    printf("OpenGL %d.%d\n", gl_major_version, gl_minor_version);
+    Log::info("OpenGL " << gl_major_version << '.' << gl_minor_version);
 
     const GLuint vertex_shader_id = create_compiled_shader(
             GL_VERTEX_SHADER,

@@ -34,6 +34,7 @@ Mesh& ChunkMeshRepository::get_or_build(const ChunkId chunk_id)
     if (found != meshes.end()) {
         return found->second;
     } else {
+        Log::debug("Building mesh at " << chunk_id);
         Mesh mesh;
         chunk_volume_repository.with(chunk_id, [&] (auto volume) {
             mesh.build_vao(mesh_builder.build(volume));
