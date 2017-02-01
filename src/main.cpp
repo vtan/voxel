@@ -59,11 +59,11 @@ int main()
     glUseProgram(program_id);
 
     ChunkVolumeRepository chunk_volume_repository(1);
-    ChunkMeshRepository chunk_mesh_repository(chunk_volume_repository);
+    ChunkMeshRepository chunk_mesh_repository(chunk_volume_repository, 50);
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
     Camera camera(aspect_ratio);
-    camera.set_position({0.f, 50.f, 0.f});
+    camera.set_position({0.f, 80.f, 0.f});
 
     Uniform<glm::mat4> model_to_clip(program_id, "modelToClip");
     model_to_clip.set(camera.calc_world_to_clip());
@@ -93,13 +93,13 @@ int main()
                     camera.set_fov(camera.get_fov() + sign * M_PI / 36.f);
                     model_to_clip.set(camera.calc_world_to_clip());
                 } else if (sc == SDL_SCANCODE_W || sc == SDL_SCANCODE_UP) {
-                    velocity_forward = 0.1f;
+                    velocity_forward = 0.5f;
                 } else if (sc == SDL_SCANCODE_S || sc == SDL_SCANCODE_DOWN) {
-                    velocity_forward = -0.1f;
+                    velocity_forward = -0.5f;
                 } else if (sc == SDL_SCANCODE_A || sc == SDL_SCANCODE_LEFT) {
-                    velocity_right = -0.1f;
+                    velocity_right = -0.5f;
                 } else if (sc == SDL_SCANCODE_D || sc == SDL_SCANCODE_RIGHT) {
-                    velocity_right = 0.1f;
+                    velocity_right = 0.5f;
                 }
             } else if (sdl_event.type == SDL_KEYUP) {
                 const auto sc = sdl_event.key.keysym.scancode;
@@ -129,16 +129,18 @@ int main()
         glClearColor(0.39f, 0.58f, 0.93f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        for (int z = -2; z <= 2; ++z) {
-            for (int x = -2; x <= 2; ++x) {
-                ChunkId chunk_id = {x, z};
+        const ChunkId player_chunk = Chunks::chunk_at(camera.get_position());
+        for (int dz = -2; dz <= 2; ++dz) {
+            for (int dx = -2; dx <= 2; ++dx) {
+                const ChunkId visible_chunk =
+                    {player_chunk.x + dx, player_chunk.z + dz};
 
                 const glm::mat4 model_to_world =
-                    Chunks::calc_translation(chunk_id);
+                    Chunks::calc_translation(visible_chunk);
                 const glm::mat4 world_to_clip = camera.calc_world_to_clip();
                 model_to_clip.set(world_to_clip * model_to_world);
 
-                chunk_mesh_repository.with(chunk_id, [](const Mesh& mesh) {
+                chunk_mesh_repository.with(visible_chunk, [](const Mesh& mesh) {
                     mesh.draw();
                 });
             }

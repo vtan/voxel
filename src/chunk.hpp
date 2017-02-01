@@ -57,6 +57,13 @@ glm::ivec3 end_coord(const ChunkId chunk_id)
     return {(chunk_id.x + 1) * x_size, y_end, (chunk_id.z + 1) * z_size};
 }
 
+ChunkId chunk_at(const glm::vec3 p)
+{
+    const auto x = (int) std::floor(p.x / x_size);
+    const auto z = (int) std::floor(p.z / z_size);
+    return { x, z };
+}
+
 glm::mat4 calc_translation(const ChunkId chunk_id)
 {
     return glm::translate(glm::vec3(
