@@ -3,7 +3,6 @@
 #include "chunk.hpp"
 #include "log.hpp"
 #include "volume.hpp"
-#include "volume_sampler.hpp"
 #include "voxel.hpp"
 
 #include <unordered_map>
@@ -11,15 +10,19 @@
 class ChunkVolumeRepository
 {
 public:
-    ChunkVolumeRepository(int bs) : border_size(bs) {}
+    typedef std::function<Volume<Voxel>(glm::ivec3, glm::ivec3, int)> VolumeSampler;
+
+    ChunkVolumeRepository(VolumeSampler vs, int bs)
+        : volume_sampler(vs)
+        , border_size(bs) {}
 
     template <typename F>
     void with(ChunkId, F);
 private:
+    const VolumeSampler volume_sampler;
     const int border_size;
 
     std::unordered_map<ChunkId, Volume<Voxel>> volumes;
-    VolumeSampler volume_sampler;
 
     Volume<Voxel>& get_or_sample(ChunkId);
 };
@@ -37,7 +40,7 @@ Volume<Voxel>& ChunkVolumeRepository::get_or_sample(const ChunkId chunk_id)
         return found->second;
     } else {
         Log::debug("Sampling volume at " << chunk_id);
-        const Volume<Voxel> volume = volume_sampler.sample_volume(
+        const Volume<Voxel> volume = volume_sampler(
                 Chunks::begin_coord(chunk_id),
                 Chunks::end_coord(chunk_id),
                 border_size);

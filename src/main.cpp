@@ -8,6 +8,7 @@
 #include "mesh.hpp"
 #include "uniform.hpp"
 #include "volume.hpp"
+#include "volumegen.hpp"
 #include "voxel.hpp"
 
 #include <fstream>
@@ -58,7 +59,11 @@ int main()
             {vertex_shader_id, fragment_shader_id});
     glUseProgram(program_id);
 
-    ChunkVolumeRepository chunk_volume_repository(1);
+    auto sample_volume = [](glm::ivec3 begin, glm::ivec3 end, int border) {
+        auto heightmap = sample_heightmap(begin, end, border);
+        return volume_from_heightmap(heightmap, end.y - begin.y, border);
+    };
+    ChunkVolumeRepository chunk_volume_repository(sample_volume, 1);
     ChunkMeshRepository chunk_mesh_repository(chunk_volume_repository, 50);
 
     constexpr float aspect_ratio = screen_width / (float) screen_height;
